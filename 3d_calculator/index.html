@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora 3D - Fordevs</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <div class="logo">
+                <span><strong>For</strong>devs</span>
+            </div>
+            <nav class="nav-tabs">
+                <button class="tab-btn active" onclick="switchTab('calculator')">Calculadora</button>
+                <button class="tab-btn" onclick="switchTab('models')">Modelos</button>
+                <button class="tab-btn" onclick="switchTab('printers')">Impressoras</button>
+                <button class="tab-btn" onclick="switchTab('filaments')">Filamentos</button>
+                <button class="tab-btn" onclick="switchTab('accessories')">Acessórios</button>
+            </nav>
+        </header>
+
+        <main>
+            <!-- CALCULATOR TAB -->
+            <div id="calculator" class="tab-content active">
+                <div class="calculator-layout">
+                    <div class="input-section">
+                        <!-- Model Details -->
+                        <div class="card">
+                            <div class="card-header">
+                                <i class="fa-solid fa-cube"></i>
+                                <h2>Modelo & Impressão</h2>
+                            </div>
+                            <div class="form-grid">
+                                <div class="form-group" style="grid-column: 1 / -1;">
+                                    <label>Carregar Modelo Salvo</label>
+                                    <select id="modelSelect" onchange="loadModelFromList()">
+                                        <option value="">Selecione um modelo salvo...</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Nome do Modelo</label>
+                                    <input type="text" id="gcode" placeholder="Ex: Benchy">
+                                </div>
+                                <div class="form-group">
+                                    <label>Impressora</label>
+                                    <select id="printerSelect">
+                                        <option value="">Selecione uma impressora...</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Filamento</label>
+                                    <select id="filamentSelect">
+                                        <option value="">Selecione um filamento...</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Tempo (h)</label>
+                                    <input type="number" id="printTime" step="0.01" placeholder="1.00">
+                                </div>
+                                <div class="form-group">
+                                    <label>Peso (g)</label>
+                                    <input type="number" id="weight" step="0.01" placeholder="Ex: 10">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Accessories -->
+                        <div class="card">
+                            <div class="card-header" style="justify-content: space-between;">
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <i class="fa-solid fa-box-open"></i>
+                                    <h2>Acessórios & Extras</h2>
+                                </div>
+                                <button class="btn-icon" onclick="switchTab('accessories')"
+                                    title="Gerenciar Acessórios">
+                                    <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                                </button>
+                            </div>
+                            <div class="form-group">
+                                <label>Adicionar Acessório</label>
+                                <div style="display: flex; gap: 10px;">
+                                    <select id="accessorySelect" style="flex: 1;">
+                                        <option value="">Selecione...</option>
+                                    </select>
+                                    <button class="btn btn-primary" onclick="addAccessoryToCalc()">
+                                        <i class="fa-solid fa-plus"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="selectedAccessories" class="data-list">
+                                <!-- Selected accessories will appear here -->
+                            </div>
+                        </div>
+
+                        <!-- Overheads & Pricing -->
+                        <div class="card">
+                            <div class="card-header">
+                                <i class="fa-solid fa-chart-line"></i>
+                                <h2>Custos Fixos & Precificação</h2>
+                            </div>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label>Falhas (%)</label>
+                                    <input type="number" id="failureRate" value="10">
+                                </div>
+                                <div class="form-group">
+                                    <label>Custo Fixo Mensal (R$)</label>
+                                    <input type="number" id="monthlyFixedCost" value="250">
+                                </div>
+                                <div class="form-group">
+                                    <label>Pedidos/Mês</label>
+                                    <input type="number" id="monthlyOrders" value="100">
+                                </div>
+                                <div class="form-group">
+                                    <label>Markup</label>
+                                    <input type="number" id="markup" step="0.1" value="3.0">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Results -->
+                    <div class="results-section">
+                        <div class="sticky-results">
+                            <div class="result-card highlight-card">
+                                <h3>Preço de Venda</h3>
+                                <div class="big-value highlight" id="finalPriceDisplay">R$ 0,00</div>
+                                <div class="profit-item">
+                                    <span>Lucro Líquido</span>
+                                    <span id="netProfitDisplay" class="positive">R$ 0,00</span>
+                                </div>
+                            </div>
+
+                            <div class="result-card">
+                                <h3>Detalhamento de Custos</h3>
+                                <div class="breakdown">
+                                    <div class="breakdown-item">
+                                        <span>Material</span>
+                                        <span id="materialCostDisplay">R$ 0,00</span>
+                                    </div>
+                                    <div class="breakdown-item">
+                                        <span>Energia</span>
+                                        <span id="energyCostDisplay">R$ 0,00</span>
+                                    </div>
+                                    <div class="breakdown-item">
+                                        <span>Acessórios</span>
+                                        <span id="accessoriesCostDisplay">R$ 0,00</span>
+                                    </div>
+                                    <div class="breakdown-item">
+                                        <span>Fixo + Falhas</span>
+                                        <span id="overheadCostDisplay">R$ 0,00</span>
+                                    </div>
+                                    <div class="breakdown-item"
+                                        style="border-top: 1px solid #333; margin-top: 10px; padding-top: 10px;">
+                                        <span>Custo Total</span>
+                                        <span id="totalCostDisplay">R$ 0,00</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button class="btn btn-primary" onclick="generatePDF()"
+                                style="width: 100%; justify-content: center; margin-top: 10px;">
+                                <i class="fa-solid fa-file-pdf"></i> Baixar Orçamento
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODELS TAB -->
+            <div id="models" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fa-solid fa-shapes"></i>
+                        <h2>Gerenciar Modelos</h2>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Nome do Modelo</label>
+                            <input type="text" id="newModelName" placeholder="Ex: Benchy Boat">
+                        </div>
+                        <div class="form-group">
+                            <label>Tempo (h)</label>
+                            <input type="number" id="newModelTime" placeholder="1.00">
+                        </div>
+                        <div class="form-group">
+                            <label>Peso (g)</label>
+                            <input type="number" id="newModelWeight" placeholder="13">
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="addModel()" style="margin-top: 20px;">
+                        Salvar Modelo
+                    </button>
+                </div>
+                <div id="modelsList" class="data-list">
+                    <!-- List of models -->
+                </div>
+            </div>
+
+            <!-- PRINTERS TAB -->
+            <div id="printers" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fa-solid fa-print"></i>
+                        <h2>Gerenciar Impressoras</h2>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Nome da Impressora</label>
+                            <input type="text" id="newPrinterName" placeholder="Ex: Bambu Lab A1">
+                        </div>
+                        <div class="form-group">
+                            <label>Potência (Watts)</label>
+                            <input type="number" id="newPrinterPower" placeholder="150">
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="addPrinter()" style="margin-top: 20px;">
+                        Adicionar Impressora
+                    </button>
+                </div>
+                <div id="printersList" class="data-list">
+                    <!-- List of printers -->
+                </div>
+            </div>
+
+            <!-- FILAMENTS TAB -->
+            <div id="filaments" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fa-solid fa-circle-notch"></i>
+                        <h2>Gerenciar Filamentos</h2>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Marca / Tipo</label>
+                            <input type="text" id="newFilamentName" placeholder="Ex: PLA Voolt3D">
+                        </div>
+                        <div class="form-group">
+                            <label>Preço por Kg (R$)</label>
+                            <input type="number" id="newFilamentPrice" placeholder="85.00">
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="addFilament()" style="margin-top: 20px;">
+                        Adicionar Filamento
+                    </button>
+                </div>
+                <div id="filamentsList" class="data-list">
+                    <!-- List of filaments -->
+                </div>
+            </div>
+
+            <!-- ACCESSORIES TAB -->
+            <div id="accessories" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fa-solid fa-tools"></i>
+                        <h2>Gerenciar Acessórios</h2>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Nome do Item</label>
+                            <input type="text" id="newAccessoryName" placeholder="Ex: Parafuso M3x10">
+                        </div>
+                        <div class="form-group">
+                            <label>Custo Unitário (R$)</label>
+                            <input type="number" id="newAccessoryPrice" placeholder="0.15">
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="addAccessory()" style="margin-top: 20px;">
+                        Adicionar Item
+                    </button>
+                </div>
+                <div id="accessoriesList" class="data-list">
+                    <!-- List of accessories -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Hidden PDF Template -->
+    <div id="pdf-template" style="display: none;">
+        <div class="pdf-container modern-tech">
+            <div class="pdf-header">
+                <div class="header-left">
+                    <div class="pdf-logo">
+                        <span><strong>For</strong>devs</span>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <h1>ORÇAMENTO</h1>
+                </div>
+            </div>
+
+            <div class="pdf-body">
+                <div class="pdf-hero">
+                    <div class="hero-content">
+                        <span class="hero-label">VALOR TOTAL</span>
+                        <span class="hero-value" id="pdfTotal">R$ 0,00</span>
+                    </div>
+                </div>
+
+                <div class="pdf-grid">
+                    <div class="grid-col">
+                        <h3>Informações do Cliente</h3>
+                        <div class="info-group">
+                            <label>Cliente:</label>
+                            <div class="line-input"></div>
+                        </div>
+                        <div class="info-group">
+                            <label>Projeto:</label>
+                            <span id="pdfModelName">Nome do Modelo</span>
+                        </div>
+                    </div>
+                    <div class="grid-col right-align">
+                        <h3>Detalhes</h3>
+                        <p><strong>Data:</strong> <span id="pdfDate">22/11/2025</span></p>
+                        <p><strong>Validade:</strong> 7 dias</p>
+                        <p><strong>Ref:</strong> #<span id="pdfNumber">001</span></p>
+                    </div>
+                </div>
+
+                <div class="pdf-table-container">
+                    <table class="pdf-modern-table">
+                        <thead>
+                            <tr>
+                                <th>DESCRIÇÃO</th>
+                                <th class="text-right">VALOR</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <strong>Impressão 3D</strong>
+                                    <br>
+                                    <small>Material: <span id="pdfFilament">PLA</span> | Equipamento: <span
+                                            id="pdfPrinter">Bambu Lab</span></small>
+                                </td>
+                                <td class="text-right" id="pdfProductionCost">R$ 0,00</td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <strong>Acabamento e Acessórios</strong>
+                                    <br>
+                                    <small>Pós-processamento e itens adicionais</small>
+                                </td>
+                                <td class="text-right" id="pdfAccessoriesCost">R$ 0,00</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="pdf-footer-modern">
+                    <div class="footer-content">
+                        <p><strong>Condições de Pagamento:</strong> 50% na aprovação, 50% na entrega.</p>
+                        <p>Pagamento via PIX, Transferência ou Dinheiro.</p>
+                    </div>
+                    <div class="footer-branding">
+                        <span>www.fordevs.com.br</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
